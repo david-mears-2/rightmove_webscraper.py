@@ -100,7 +100,7 @@ class RightmoveData:
             by (str): valid column name from `get_results` DataFrame attribute.
         """
         if not by:
-            by = "type" if self.is_commercial() else "number_bedrooms"
+            by = "type" if self.is_commercial else "number_bedrooms"
         assert by in self.get_results.columns, f"Column not found in `get_results`: {by}"
         df = self.get_results.dropna(axis=0, subset=["price"])
         groupers = {"price": ["count", "mean"]}
