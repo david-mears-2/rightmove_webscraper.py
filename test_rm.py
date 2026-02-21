@@ -18,6 +18,7 @@ def test_sale_residential():
     assert required_columns.issubset(set(rm.get_results.columns))
     assert len(rm.get_results) > 0
     assert isinstance(rm.page_count, int)
+    assert rm.is_commercial == False
     assert isinstance(rm.results_count, int)
     assert isinstance(rm.results_count_display, int)
     assert url == rm.url
@@ -41,6 +42,7 @@ def test_rent_residential():
     assert required_columns.issubset(set(rm.get_results.columns))
     assert len(rm.get_results) > 0
     assert isinstance(rm.page_count, int)
+    assert rm.is_commercial == False
     assert isinstance(rm.results_count, int)
     assert isinstance(rm.results_count_display, int)
     assert url == rm.url
@@ -64,6 +66,7 @@ def test_sale_commercial():
     assert required_columns.issubset(set(rm.get_results.columns))
     assert len(rm.get_results) > 0
     assert isinstance(rm.page_count, int)
+    assert rm.is_commercial == True
     assert isinstance(rm.results_count, int)
     assert isinstance(rm.results_count_display, int)
     assert url == rm.url
@@ -89,6 +92,7 @@ def test_rent_commercial():
     assert required_columns.issubset(set(rm.get_results.columns))
     assert len(rm.get_results) > 0
     assert isinstance(rm.page_count, int)
+    assert rm.is_commercial == True
     assert isinstance(rm.results_count, int)
     assert isinstance(rm.results_count_display, int)
     assert url == rm.url

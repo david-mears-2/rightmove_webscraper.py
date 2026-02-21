@@ -57,11 +57,10 @@ class RightmoveData:
         returns status code 200."""
         real_url = "{}://www.rightmove.co.uk/{}/find.html?"
         protocols = ["http", "https"]
-        types = ["property-to-rent", "property-for-sale", "new-homes-for-sale"]
+        types = ["property-to-rent", "property-for-sale", "new-homes-for-sale", "commercial-property-for-sale", "commercial-property-to-let"]
         urls = [real_url.format(p, t) for p in protocols for t in types]
 
         conditions = [self.url.startswith(u) for u in urls]
-
         valid_url = any(conditions)
         valid_status = self._status_code==200
         if not (valid_url and valid_status):
