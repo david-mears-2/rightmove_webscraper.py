@@ -97,7 +97,7 @@ class RightmoveData:
             by (str): valid column name from `get_results` DataFrame attribute.
         """
         if not by:
-            by = "type" if "commercial" in self.rent_or_sale else "number_bedrooms"
+            by = "type" if self.is_commercial() else "number_bedrooms"
         assert by in self.get_results.columns, f"Column not found in `get_results`: {by}"
         df = self.get_results.dropna(axis=0, subset=["price"])
         groupers = {"price": ["count", "mean"]}
@@ -112,17 +112,12 @@ class RightmoveData:
         return df.reset_index(drop=True)
 
     @property
-    def rent_or_sale(self):
-        """String specifying if the search is for properties for rent or sale.
-        Required because Xpaths are different for the target elements."""
-        if "/property-for-sale/" in self.url or "/new-homes-for-sale/" in self.url:
-            return "sale"
-        elif "/property-to-rent/" in self.url:
-            return "rent"
-        elif "/commercial-property-for-sale/" in self.url:
-            return "sale-commercial"
-        elif "/commercial-property-to-let/" in self.url:
-            return "rent-commercial"
+    def is_commercial(self):
+        """Boolean specifying if the search is for commercial properties."""
+        if "/property-for-sale/" in self.url or "/new-homes-for-sale/" in self.url or "/property-to-rent/" in self.url:
+            return False
+        elif "/commercial-property-for-sale/" in self.url or "/commercial-property-to-let/" in self.url:
+            return True
         else:
             raise ValueError(f"Invalid rightmove URL:\n\n\t{self.url}")
 
@@ -132,7 +127,7 @@ class RightmoveData:
         the first page of results. Note that not all listings are available to
         scrape because rightmove limits the number of accessible pages."""
         tree = html.fromstring(self._first_page)
-        xpath = """//span[@class="searchHeader-resultCount"]/text()"""
+        xpath = """//div[contains(@class,"ResultsCount_resultsCount__")]//p//span/text()"""
         return int(tree.xpath(xpath)[0].replace(",", ""))
 
     @property
@@ -155,27 +150,16 @@ class RightmoveData:
         # Process the html:
         tree = html.fromstring(request_content)
 
-        # Set xpath for price:
-        if "rent" in self.rent_or_sale:
-            xp_prices = """//span[@class="propertyCard-priceValue"]/text()"""
-        elif "sale" in self.rent_or_sale:
-            xp_prices = """//div[@class="propertyCard-priceValue"]/text()"""
-        else:
-            raise ValueError("Invalid URL format.")
-
-        # Set xpaths for listing title, property address, URL, and agent URL:
-        xp_titles = """//div[@class="propertyCard-details"]\
-        //a[@class="propertyCard-link"]\
-        //h2[@class="propertyCard-title"]/text()"""
-        xp_addresses = """//address[@class="propertyCard-address"]//span/text()"""
-        xp_weblinks = """//div[@class="propertyCard-details"]//a[@class="propertyCard-link"]/@href"""
-        xp_agent_urls = """//div[@class="propertyCard-contactsItem"]\
-        //div[@class="propertyCard-branchLogo"]\
-        //a[@class="propertyCard-branchLogo-link"]/@href"""
+        # Set xpaths for listing price, type, property address, URL, and agent URL:
+        xp_prices = """//div[contains(@class, "PropertyPrice_price")]/text()"""
+        xp_types = """//span[contains(@class, "PropertyInformation_propertyType")]/text()"""
+        xp_addresses = """//address[contains(@class, "PropertyAddress_address")]/text()"""
+        xp_weblinks = """//div[contains(@class, "propertyCard-details")]//a[contains(@class, "propertyCard-link")]/@href"""
+        xp_agent_urls = """//div[contains(@class,"PropertyCardActions_estateAgent")]//a/@href"""
 
         # Create data lists from xpaths:
         price_pcm = tree.xpath(xp_prices)
-        titles = tree.xpath(xp_titles)
+        types = tree.xpath(xp_types)
         addresses = tree.xpath(xp_addresses)
         base = "http://www.rightmove.co.uk"
         weblinks = [f"{base}{tree.xpath(xp_weblinks)[w]}" for w in range(len(tree.xpath(xp_weblinks)))]
@@ -197,7 +181,7 @@ class RightmoveData:
                     floorplan_urls.append(np.nan)
 
         # Store the data in a Pandas DataFrame:
-        data = [price_pcm, titles, addresses, weblinks, agent_urls]
+        data = [price_pcm, types, addresses, weblinks, agent_urls]
         data = data + [floorplan_urls] if get_floorplans else data
         temp_df = pd.DataFrame(data)
         temp_df = temp_df.transpose()
