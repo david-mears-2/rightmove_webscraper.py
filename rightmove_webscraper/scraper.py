@@ -62,9 +62,10 @@ class RightmoveData:
 
         conditions = [self.url.startswith(u) for u in urls]
         valid_url = any(conditions)
-        valid_status = self._status_code==200
-        if not (valid_url and valid_status):
+        if not (valid_url):
             raise ValueError(f"Invalid rightmove search URL:\n\n\t{self.url}")
+        if not (self._status_code==200):
+            raise ValueError(f"Invalid status code: {self._status_code}")
 
     @property
     def url(self):
@@ -80,7 +81,9 @@ class RightmoveData:
         """Total number of results returned by `get_results`. Note that the
         rightmove website may state a much higher number of results; this is
         because they artificially restrict the number of results pages that can
-        be accessed to 42."""
+        be accessed to 42. It may also state a lower number of results, since
+        if any featured listings are shown this will boost the actual number of
+        listings."""
         return len(self.get_results)
 
     @property
@@ -127,7 +130,10 @@ class RightmoveData:
     def results_count_display(self):
         """Returns an integer of the total number of listings as displayed on
         the first page of results. Note that not all listings are available to
-        scrape because rightmove limits the number of accessible pages."""
+        scrape because rightmove limits the number of accessible pages. Also,
+        if any featured listings are shown, this will boost the actual number of listings
+        compared to the displayed count.
+        """
         tree = html.fromstring(self._first_page)
         xpath = """//div[contains(@class,"ResultsCount_resultsCount__")]//p//span/text()"""
         return int(tree.xpath(xpath)[0].replace(",", ""))
@@ -182,9 +188,6 @@ class RightmoveData:
 
             bedrooms = card.xpath('.//span[contains(@class, "PropertyInformation_bedroomsCount__")]/text()')
             number_bedrooms.append(bedrooms[0] if bedrooms else None)
-
-        print(f"Scraped {len(cards)} listings from page.")
-        print(f"price_pcm: {len(price_pcm)}, types: {len(types)}, addresses: {len(addresses)}, weblinks: {len(weblinks)}, agent_urls: {len(agent_urls)}, number_bedrooms: {len(number_bedrooms)}")
 
         # Optionally get floorplan links from property urls (longer runtime):
         floorplan_urls = list() if get_floorplans else np.nan
