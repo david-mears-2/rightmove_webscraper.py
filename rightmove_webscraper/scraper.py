@@ -135,7 +135,7 @@ class RightmoveData:
         the first page of results. Note that not all listings are available to
         scrape because rightmove limits the number of accessible pages."""
         tree = html.fromstring(self._first_page)
-        xpath = """//span[@class="searchHeader-resultCount"]/text()"""
+        xpath = """//*[contains(@class,"ResultsCount_resultsCount__")]//p//span/text()"""
         return int(tree.xpath(xpath)[0].replace(",", ""))
 
     @property
